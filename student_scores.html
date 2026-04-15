@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学生课后练习成绩</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --accent-color: #f39c12;
+            --text-color: #333;
+            --light-text: #777;
+            --background-color: #f8f9fa;
+            --card-background: #ffffff;
+            --border-color: #e0e0e0;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: var(--card-background);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .info-section {
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .info-item label {
+            font-weight: 500;
+            color: var(--text-color);
+        }
+        
+        .info-item .value {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .update-note {
+            background-color: #e3f2fd;
+            border-left: 4px solid var(--primary-color);
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+        
+        .update-note p {
+            margin: 0;
+            color: var(--text-color);
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+        }
+        
+        .score-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .score-table th {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px;
+            text-align: center;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        
+        .score-table th:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 2;
+        }
+        
+        .score-table td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+        
+        .score-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .score-table tr:hover {
+            background-color: #e3f2fd;
+            transition: var(--transition);
+        }
+        
+        .score-table tr.highlighted {
+            color: #2ecc71;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+        
+        .student-name {
+            font-weight: 600;
+            color: var(--text-color);
+            background-color: #f0f8ff;
+            position: sticky;
+            left: 0;
+            z-index: 1;
+        }
+        
+        .no-data {
+            color: var(--light-text);
+            font-style: italic;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 30px 0;
+            gap: 10px;
+        }
+        
+        .pagination button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+        }
+        
+        .pagination button:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        .pagination button:disabled {
+            background-color: var(--light-text);
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .page-indicator {
+            font-weight: 600;
+            color: var(--text-color);
+        }
+        
+        .notes-section {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .notes-section h2 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        
+        .notes-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 4px;
+            border-left: 4px solid var(--accent-color);
+            min-height: 150px;
+            line-height: 1.6;
+        }
+        
+        .notes-content p {
+            margin-bottom: 10px;
+        }
+        
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            margin-top: 30px;
+            border-top: 1px solid var(--border-color);
+            color: var(--light-text);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .header p {
+                font-size: 1rem;
+            }
+            
+            .content {
+                padding: 15px;
+            }
+            
+            .info-section {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+                padding: 15px;
+            }
+            
+            .info-item {
+                justify-content: space-between;
+            }
+            
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin-top: 15px;
+            }
+            
+            .score-table {
+                font-size: 0.85rem;
+                min-width: 600px;
+            }
+            
+            .score-table th,
+            .score-table td {
+                padding: 6px 8px;
+                white-space: nowrap;
+            }
+            
+            .pagination {
+                flex-wrap: wrap;
+                gap: 10px;
+                margin: 20px 0;
+            }
+            
+            .pagination button {
+                padding: 10px 20px;
+                font-size: 1rem;
+                min-width: 100px;
+            }
+            
+            .page-indicator {
+                width: 100%;
+                text-align: center;
+                order: -1;
+            }
+            
+            .notes-section {
+                margin-top: 30px;
+                padding: 15px;
+            }
+            
+            .notes-content {
+                padding: 15px;
+            }
+            
+            .footer {
+                padding: 15px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .content {
+                padding: 10px;
+            }
+            
+            .info-section {
+                padding: 10px;
+            }
+            
+            .score-table {
+                font-size: 0.75rem;
+                min-width: 500px;
+            }
+            
+            .score-table th,
+            .score-table td {
+                padding: 5px 6px;
+            }
+            
+            .pagination button {
+                padding: 8px 16px;
+                font-size: 0.9rem;
+                min-width: 80px;
+            }
+            
+            .notes-section {
+                padding: 10px;
+            }
+            
+            .notes-content {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>学生课后练习成绩</h1>
+            <p>按周记录的学生成绩</p>
+        </div>
+        
+        <div class="content">
+            <div class="info-section">
+                <div class="info-item">
+                    <label>学生人数：</label>
+                    <span class="value">7人</span>
+                </div>
+                <div class="info-item">
+                    <label>数据月份：</label>
+                    <span class="value">四月</span>
+                </div>
+                <div class="info-item">
+                    <label>最近更新：</label>
+                    <span class="value">2026年4月15日</span>
+                </div>
+                <div class="info-item">
+                    <label>更新频率：</label>
+                    <span class="value">每日更新</span>
+                </div>
+            </div>
+            
+            <div class="update-note">
+                <p>⚠️ 数据每日更新，按周分页显示。每次更新后会按日期显示学生的最新成绩。</p>
+            </div>
+            
+            <div class="update-note">
+                <p>💡 点击学生姓名，该行文字会变成绿色显示，方便查看该学生的成绩。</p>
+            </div>
+            
+            <!-- 第一周 (3月30日-4月5日) -->
+            <div class="week-page" id="week1" style="display: none;">
+                <h2>第一周（3月30日-4月5日）</h2>
+                <div class="table-container">
+                    <table class="score-table">
+                        <thead>
+                            <tr>
+                                <th>学生姓名</th>
+                                <th>3月30日 (周一)</th>
+                                <th>3月31日 (周二)</th>
+                                <th>4月1日 (周三)</th>
+                                <th>4月2日 (周四)</th>
+                                <th>4月3日 (周五)</th>
+                                <th>4月4日 (周六)</th>
+                                <th>4月5日 (周日)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="student-name">周君昊</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">郭舒杭</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">王晟萌</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">申奥一</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">王梓旭</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">付紫沁</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">包佳洢</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- 第二周 (4月6日-4月12日) -->
+            <div class="week-page" id="week2" style="display: none;">
+                <h2>第二周（4月6日-4月12日）</h2>
+                <div class="table-container">
+                    <table class="score-table">
+                        <thead>
+                            <tr>
+                                <th>学生姓名</th>
+                                <th>4月6日 (周一)</th>
+                                <th>4月7日 (周二)</th>
+                                <th>4月8日 (周三)</th>
+                                <th>4月9日 (周四)</th>
+                                <th>4月10日 (周五)</th>
+                                <th>4月11日 (周六)</th>
+                                <th>4月12日 (周日)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="student-name">周君昊</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">郭舒杭</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">王晟萌</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">申奥一</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">王梓旭</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">付紫沁</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">包佳洢</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- 第三周 (4月13日-4月19日) -->
+            <div class="week-page" id="week3" style="display: block;">
+                <h2>第三周（4月13日-4月19日）</h2>
+                <div class="table-container">
+                    <table class="score-table">
+                        <thead>
+                            <tr>
+                                <th>学生姓名</th>
+                                <th>4月13日 (周一)</th>
+                                <th>4月14日 (周二)</th>
+                                <th>4月15日 (周三)</th>
+                                <th>4月16日 (周四)</th>
+                                <th>4月17日 (周五)</th>
+                                <th>4月18日 (周六)</th>
+                                <th>4月19日 (周日)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="student-name">周君昊</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td>80</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">郭舒杭</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td>80</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">王晟萌</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td>100</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">申奥一</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td>80</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">王梓旭</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td>100</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">付紫沁</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td>25</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">包佳洢</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td>100</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- 第四周 (4月20日-4月26日) -->
+            <div class="week-page" id="week4" style="display: none;">
+                <h2>第四周（4月20日-4月26日）</h2>
+                <div class="table-container">
+                    <table class="score-table">
+                        <thead>
+                            <tr>
+                                <th>学生姓名</th>
+                                <th>4月20日 (周一)</th>
+                                <th>4月21日 (周二)</th>
+                                <th>4月22日 (周三)</th>
+                                <th>4月23日 (周四)</th>
+                                <th>4月24日 (周五)</th>
+                                <th>4月25日 (周六)</th>
+                                <th>4月26日 (周日)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="student-name">周君昊</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">郭舒杭</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">王晟萌</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">申奥一</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">王梓旭</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">付紫沁</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">包佳洢</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- 第五周 (4月27日-5月3日) -->
+            <div class="week-page" id="week5" style="display: none;">
+                <h2>第五周（4月27日-5月3日）</h2>
+                <div class="table-container">
+                    <table class="score-table">
+                        <thead>
+                            <tr>
+                                <th>学生姓名</th>
+                                <th>4月27日 (周一)</th>
+                                <th>4月28日 (周二)</th>
+                                <th>4月29日 (周三)</th>
+                                <th>4月30日 (周四)</th>
+                                <th>5月1日 (周五)</th>
+                                <th>5月2日 (周六)</th>
+                                <th>5月3日 (周日)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="student-name">周君昊</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">郭舒杭</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">王晟萌</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">申奥一</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">王梓旭</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">付紫沁</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                            <tr>
+                                <td class="student-name">包佳洢</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                                <td class="no-data">--</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- 翻页按钮 -->
+            <div class="pagination">
+                <button id="prevBtn" onclick="changePage(-1)">上一页</button>
+                <span class="page-indicator" id="pageIndicator">第 3 页，共 5 页</span>
+                <button id="nextBtn" onclick="changePage(1)">下一页</button>
+            </div>
+            
+            <!-- 老师备注留言区 -->
+            <div class="notes-section">
+                <h2>老师备注留言区</h2>
+                <div class="notes-content">
+                    <p><strong>4月15日备注：</strong></p>
+                    <p>付紫沁需加强练习，申奥一近期出现零食行为，家长注意零花钱的管控。</p>
+                </div>
+            </div>
+            
+            <div class="footer">
+                <p>© 2026 学生成绩管理系统 | 数据每日更新</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 当前页码
+        let currentPage = 3;
+        const totalPages = 5;
+        
+        // 初始化页面
+        function initPage() {
+            updatePageDisplay();
+            updateButtons();
+        }
+        
+        // 切换页面
+        function changePage(direction) {
+            currentPage += direction;
+            
+            if (currentPage < 1) currentPage = 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+            
+            updatePageDisplay();
+            updateButtons();
+        }
+        
+        // 绑定学生姓名点击事件
+        function bindStudentNameEvents() {
+            document.querySelectorAll('.student-name').forEach(nameCell => {
+                nameCell.addEventListener('click', function() {
+                    // 移除所有行的高亮
+                    document.querySelectorAll('.score-table tr').forEach(row => {
+                        row.classList.remove('highlighted');
+                    });
+                    
+                    // 为当前行添加高亮
+                    this.parentElement.classList.add('highlighted');
+                });
+            });
+        }
+        
+        // 更新页面显示
+        function updatePageDisplay() {
+            // 隐藏所有页面
+            document.querySelectorAll('.week-page').forEach(page => {
+                page.style.display = 'none';
+            });
+            
+            // 显示当前页面
+            document.getElementById(`week${currentPage}`).style.display = 'block';
+            
+            // 更新页码指示器
+            document.getElementById('pageIndicator').textContent = `第 ${currentPage} 页，共 ${totalPages} 页`;
+            
+            // 重新绑定学生姓名点击事件
+            bindStudentNameEvents();
+        }
+        
+        // 更新按钮状态
+        function updateButtons() {
+            document.getElementById('prevBtn').disabled = currentPage === 1;
+            document.getElementById('nextBtn').disabled = currentPage === totalPages;
+        }
+        
+        // 页面加载完成后初始化
+        window.onload = initPage;
+    </script>
+</body>
+</html>
