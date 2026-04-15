@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>心理测评中心</title>
+<style>
+  :root {
+    --primary: #6c63ff;
+    --secondary: #f50057;
+    --bg: #0f0f1a;
+    --card: #1a1a2e;
+    --card2: #16213e;
+    --text: #e0e0ff;
+    --muted: #888aaa;
+    --success: #00e676;
+    --warning: #ffab00;
+    --danger: #ff5252;
+    --info: #40c4ff;
+    --border: rgba(108,99,255,0.25);
+    --glow: 0 0 24px rgba(108,99,255,0.35);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Stars background ── */
+  #stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  .star { position: absolute; border-radius: 50%; background: #fff; animation: twinkle 3s infinite alternate; }
+  @keyframes twinkle { from { opacity: .2; transform: scale(1); } to { opacity: .9; transform: scale(1.4); } }
+
+  /* ── Layout ── */
+  #app { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 24px 16px 80px; }
+
+  /* ── Header ── */
+  header { text-align: center; padding: 48px 0 36px; }
+  header h1 {
+    font-size: 2.6rem; font-weight: 800; letter-spacing: 2px;
+    background: linear-gradient(135deg, #a78bfa, #6c63ff, #40c4ff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    text-shadow: none;
+  }
+  header p { color: var(--muted); margin-top: 10px; font-size: 1rem; }
+
+  /* ── Home cards grid ── */
+  #home-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px; margin-top: 8px;
+  }
+  .test-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px 22px;
+    cursor: pointer;
+    transition: transform .3s, box-shadow .3s, border-color .3s;
+    position: relative; overflow: hidden;
+  }
+  .test-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, var(--c1,#6c63ff22), var(--c2,#40c4ff11));
+    opacity: 0; transition: opacity .3s;
+  }
+  .test-card:hover { transform: translateY(-6px); box-shadow: var(--glow); border-color: var(--primary); }
+  .test-card:hover::before { opacity: 1; }
+  .test-card .icon { font-size: 2.6rem; margin-bottom: 14px; }
+  .test-card h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 6px; }
+  .test-card p { color: var(--muted); font-size: .85rem; line-height: 1.5; }
+  .test-card .meta { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .tag {
+    font-size: .7rem; padding: 3px 10px; border-radius: 20px;
+    background: rgba(108,99,255,0.18); color: #a78bfa; font-weight: 600; letter-spacing: .5px;
+  }
+
+  /* ── Test screen ── */
+  #test-screen { display: none; }
+  #test-screen.active { display: block; }
+  #home-screen.hidden { display: none; }
+  #result-screen { display: none; }
+  #result-screen.active { display: block; }
+
+  .test-header { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+  .back-btn {
+    background: rgba(108,99,255,0.15); border: 1px solid var(--border);
+    color: var(--text); border-radius: 12px; padding: 8px 16px;
+    cursor: pointer; font-size: .9rem; transition: background .2s;
+  }
+  .back-btn:hover { background: rgba(108,99,255,0.3); }
+  .test-title { font-size: 1.4rem; font-weight: 700; flex: 1; }
+
+  /* Progress bar */
+  .progress-wrap { margin-bottom: 28px; }
+  .progress-info { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: .85rem; color: var(--muted); }
+  .progress-bar { height: 6px; background: rgba(255,255,255,0.08); border-radius: 10px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, #6c63ff, #40c4ff); transition: width .4s ease; }
+
+  /* Question card */
+  .question-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 32px 28px;
+    animation: fadeUp .4s ease;
+  }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+  .q-num { color: var(--primary); font-size: .8rem; font-weight: 700; letter-spacing: 1px; margin-bottom: 10px; text-transform: uppercase; }
+  .q-text { font-size: 1.15rem; line-height: 1.65; margin-bottom: 26px; }
+
+  /* Options */
+  .options { display: flex; flex-direction: column; gap: 12px; }
+  .option-btn {
+    background: rgba(255,255,255,0.04); border: 1.5px solid rgba(255,255,255,0.1);
+    color: var(--text); border-radius: 14px; padding: 14px 20px;
+    cursor: pointer; text-align: left; font-size: .95rem;
+    transition: all .2s; display: flex; align-items: center; gap: 12px;
+  }
+  .option-btn .opt-letter {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: rgba(108,99,255,0.15); color: var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .85rem; flex-shrink: 0;
+  }
+  .option-btn:hover { border-color: var(--primary); background: rgba(108,99,255,0.12); transform: translateX(4px); }
+  .option-btn.selected { border-color: var(--primary); background: rgba(108,99,255,0.22); }
+  .option-btn.selected .opt-letter { background: var(--primary); color: #fff; }
+
+  /* Likert scale */
+  .likert-wrap { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+  .likert-labels { display: flex; justify-content: space-between; font-size: .75rem; color: var(--muted); margin-bottom: 10px; }
+  .likert-btn {
+    width: 48px; height: 48px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.04);
+    color: var(--text); font-size: .95rem; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+  }
+  .likert-btn:hover { border-color: var(--primary); background: rgba(108,99,255,0.2); transform: scale(1.1); }
+  .likert-btn.selected { border-color: var(--primary); background: var(--primary); color: #fff; transform: scale(1.15); }
+
+  /* Nav buttons */
+  .nav-btns { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+  .btn-primary {
+    background: linear-gradient(135deg, #6c63ff, #40c4ff);
+    border: none; color: #fff; border-radius: 14px;
+    padding: 12px 28px; font-size: 1rem; font-weight: 700;
+    cursor: pointer; transition: opacity .2s, transform .2s;
+  }
+  .btn-primary:hover { opacity: .88; transform: translateY(-2px); }
+  .btn-primary:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+  /* ── Result screen ── */
+  .result-wrap {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 24px; padding: 36px 28px;
+    animation: fadeUp .5s ease;
+  }
+  .result-badge {
+    text-align: center; margin-bottom: 28px;
+  }
+  .result-type {
+    font-size: 3.5rem; font-weight: 900;
+    background: linear-gradient(135deg, #a78bfa, #6c63ff, #40c4ff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+  }
+  .result-name { font-size: 1.3rem; font-weight: 700; margin-bottom: 10px; }
+  .result-desc { color: var(--muted); line-height: 1.65; font-size: .95rem; max-width: 600px; margin: 0 auto; }
+
+  /* Dimension bars */
+  .dim-bars { margin: 28px 0; }
+  .dim-row { margin-bottom: 18px; }
+  .dim-labels { display: flex; justify-content: space-between; font-size: .82rem; margin-bottom: 6px; }
+  .dim-label-l { color: #a78bfa; font-weight: 600; }
+  .dim-label-r { color: #40c4ff; font-weight: 600; }
+  .dim-bar { height: 10px; background: rgba(255,255,255,0.08); border-radius: 10px; overflow: hidden; position: relative; }
+  .dim-fill {
+    position: absolute; top: 0; height: 100%; border-radius: 10px;
+    transition: width .8s cubic-bezier(.4,0,.2,1);
+  }
+  .dim-fill.left { left: 0; background: linear-gradient(90deg, #a78bfa, #6c63ff); }
+  .dim-fill.right { right: 0; background: linear-gradient(90deg, #40c4ff, #00e676); }
+  .dim-pct { text-align: center; font-size: .78rem; color: var(--muted); margin-top: 4px; }
+
+  /* Score meter */
+  .score-meter { text-align: center; margin: 20px 0; }
+  .score-circle {
+    width: 140px; height: 140px; border-radius: 50%;
+    border: 8px solid transparent;
+    margin: 0 auto 14px;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; position: relative;
+    background: var(--card2);
+  }
+  .score-value { font-size: 2.4rem; font-weight: 900; }
+  .score-max { font-size: .8rem; color: var(--muted); }
+  .score-level { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+  .score-hint { color: var(--muted); font-size: .88rem; max-width: 500px; margin: 0 auto; line-height: 1.6; }
+
+  /* Traits list */
+  .traits-grid { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; justify-content: center; }
+  .trait-chip {
+    padding: 7px 16px; border-radius: 20px; font-size: .82rem; font-weight: 600;
+    background: rgba(108,99,255,0.18); border: 1px solid rgba(108,99,255,0.35);
+    color: #a78bfa;
+  }
+
+  /* Famous people */
+  .famous { margin-top: 22px; }
+  .famous h4 { font-size: .9rem; color: var(--muted); margin-bottom: 10px; font-weight: 600; letter-spacing: .5px; }
+  .famous-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .famous-chip {
+    padding: 5px 14px; border-radius: 20px; font-size: .8rem;
+    background: rgba(64,196,255,0.12); border: 1px solid rgba(64,196,255,0.25); color: #40c4ff;
+  }
+
+  /* Result actions */
+  .result-actions { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
+  .btn-outline {
+    flex: 1; min-width: 140px; background: transparent;
+    border: 1.5px solid var(--border); color: var(--text);
+    border-radius: 14px; padding: 12px 20px; font-size: .95rem;
+    cursor: pointer; transition: all .2s; font-weight: 600;
+  }
+  .btn-outline:hover { border-color: var(--primary); background: rgba(108,99,255,0.12); }
+
+  /* Big Five bars */
+  .big5-bar-wrap { margin: 24px 0; }
+  .b5-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .b5-label { width: 60px; font-size: .82rem; color: var(--muted); text-align: right; flex-shrink: 0; }
+  .b5-name { font-weight: 700; font-size: .85rem; color: var(--text); }
+  .b5-track { flex: 1; height: 10px; background: rgba(255,255,255,0.08); border-radius: 10px; overflow: hidden; }
+  .b5-fill { height: 100%; border-radius: 10px; transition: width .9s cubic-bezier(.4,0,.2,1); }
+  .b5-pct { width: 40px; font-size: .8rem; color: var(--muted); flex-shrink: 0; }
+
+  /* Responsive */
+  @media(max-width:600px) {
+    header h1 { font-size: 1.8rem; }
+    .question-card { padding: 22px 16px; }
+    .result-type { font-size: 2.5rem; }
+    .dim-labels { font-size: .74rem; }
+  }
+
+  /* Notification */
+  .toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: #1a1a2e; border: 1px solid var(--border);
+    border-radius: 14px; padding: 12px 24px; font-size: .9rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    transition: transform .3s; z-index: 999;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Disclaimer */
+  .disclaimer {
+    margin-top: 20px; padding: 14px 18px;
+    background: rgba(255,171,0,0.08); border: 1px solid rgba(255,171,0,0.2);
+    border-radius: 12px; font-size: .8rem; color: var(--warning); line-height: 1.5;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+
+<div id="app">
+  <header>
+    <h1>🧠 心理测评中心</h1>
+    <p>探索内心世界 · 了解真实的自己</p>
+  </header>
+
+  <!-- Home Screen -->
+  <div id="home-screen">
+    <div id="home-grid">
+      <div class="test-card" onclick="startTest('mbti')" style="--c1:#6c63ff22;--c2:#a78bfa11">
+        <div class="icon">🎭</div>
+        <h3>MBTI 人格类型</h3>
+        <p>探索你属于16种人格中的哪一种，了解你的思维方式与行为模式。</p>
+        <div class="meta">
+          <span class="tag">60题</span>
+          <span class="tag">经典测试</span>
+          <span class="tag">约10分钟</span>
+        </div>
+      </div>
+      <div class="test-card" onclick="startTest('anxiety')" style="--c1:#ff525222;--c2:#ff173711">
+        <div class="icon">😰</div>
+        <h3>焦虑自评量表</h3>
+        <p>基于GAD-7标准，科学评估你当前的焦虑程度与心理压力状态。</p>
+        <div class="meta">
+          <span class="tag">7题</span>
+          <span class="tag">GAD-7</span>
+          <span class="tag">约2分钟</span>
+        </div>
+      </div>
+      <div class="test-card" onclick="startTest('depression')" style="--c1:#40c4ff22;--c2:#00bcd411">
+        <div class="icon">🌧️</div>
+        <h3>抑郁倾向筛查</h3>
+        <p>基于PHQ-9量表，评估你近两周的情绪状态与心理健康水平。</p>
+        <div class="meta">
+          <span class="tag">9题</span>
+          <span class="tag">PHQ-9</span>
+          <span class="tag">约3分钟</span>
+        </div>
+      </div>
+      <div class="test-card" onclick="startTest('big5')" style="--c1:#00e67622;--c2:#69f0ae11">
+        <div class="icon">🌟</div>
+        <h3>大五人格测试</h3>
+        <p>从开放性、尽责性、外向性、宜人性、神经质五个维度全面解析你的人格。</p>
+        <div class="meta">
+          <span class="tag">40题</span>
+          <span class="tag">OCEAN</span>
+          <span class="tag">约8分钟</span>
+        </div>
+      </div>
+      <div class="test-card" onclick="startTest('stress')" style="--c1:#ffab0022;--c2:#ffd74011">
+        <div class="icon">⚡</div>
+        <h3>压力水平测试</h3>
+        <p>评估你的生活与工作压力，找出压力来源，探索有效的减压策略。</p>
+        <div class="meta">
+          <span class="tag">14题</span>
+          <span class="tag">PSS量表</span>
+          <span class="tag">约4分钟</span>
+        </div>
+      </div>
+      <div class="test-card" onclick="startTest('selfesteem')" style="--c1:#e040fb22;--c2:#ce93d811">
+        <div class="icon">💎</div>
+        <h3>自尊水平评估</h3>
+        <p>探索你的自我价值感与自信程度，了解内在力量与自我认知模式。</p>
+        <div class="meta">
+          <span class="tag">10题</span>
+          <span class="tag">Rosenberg</span>
+          <span class="tag">约2分钟</span>
+        </div>
+      </div>
+    </div>
+    <div class="disclaimer">
+      ⚠️ 本测试仅供参考，不构成任何医学诊断。如有严重心理困扰，请寻求专业心理咨询师或医生的帮助。
+    </div>
+  </div>
+
+  <!-- Test Screen -->
+  <div id="test-screen">
+    <div class="test-header">
+      <button class="back-btn" onclick="goHome()">← 返回</button>
+      <div class="test-title" id="test-title"></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-info">
+        <span id="progress-text">第 1 题</span>
+        <span id="progress-count">0 / 0</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+    <div class="question-card" id="question-card">
+      <div class="q-num" id="q-num"></div>
+      <div class="q-text" id="q-text"></div>
+      <div class="options" id="options-container"></div>
+    </div>
+    <div class="nav-btns">
+      <button class="btn-primary" id="next-btn" onclick="nextQuestion()" disabled>下一题 →</button>
+    </div>
+  </div>
+
+  <!-- Result Screen -->
+  <div id="result-screen">
+    <div class="test-header">
+      <button class="back-btn" onclick="goHome()">← 返回首页</button>
+      <div class="test-title">测试结果</div>
+    </div>
+    <div class="result-wrap" id="result-content"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Stars ──
+(function(){
+  const c=document.getElementById('stars'), ctx=c.getContext('2d');
+  function resize(){ c.width=innerWidth; c.height=innerHeight; }
+  resize(); window.addEventListener('resize',resize);
+  const stars=Array.from({length:120},()=>({
+    x:Math.random()*innerWidth, y:Math.random()*innerHeight,
+    r:Math.random()*1.5+.3, a:Math.random(), da:(Math.random()-.5)*.008
+  }));
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    stars.forEach(s=>{
+      s.a=Math.max(.1,Math.min(1,s.a+s.da));
+      if(s.a<=.1||s.a>=1) s.da=-s.da;
+      ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,255,255,${s.a})`; ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ── Toast ──
+function showToast(msg,ms=2200){
+  const t=document.getElementById('toast'); t.textContent=msg;
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),ms);
+}
+
+// ── State ──
+let currentTest='', currentQ=0, answers=[], testDef=null;
+
+// ── Test definitions ──
+const TESTS = {
+
+  // ────────────── MBTI ──────────────
+  mbti: {
+    title: 'MBTI 人格类型测试',
+    type: 'choice',  // A/B choice, each maps to dimension
+    questions: [
+      // E/I
+      {text:'在社交聚会中，你通常是？', opts:['积极与陌生人交谈，感觉很充实','更喜欢和熟悉的朋友小聊，或独处充电'], dim:'EI', vals:[1,0]},
+      {text:'结束一天后，你更倾向于？', opts:['出去和朋友聚会来放松','独处或者宅在家里来恢复精力'], dim:'EI', vals:[1,0]},
+      {text:'当有个问题要解决时，你倾向于？', opts:['和他人讨论、集思广益','独自思考，想清楚再说'], dim:'EI', vals:[1,0]},
+      {text:'你在会议中更常见的行为是？', opts:['主动发言，喜欢头脑风暴','先倾听，有把握了才发表意见'], dim:'EI', vals:[1,0]},
+      {text:'你更喜欢哪种工作方式？', opts:['在开放的办公区域，和同事互动','有自己的独立空间，安静地专注工作'], dim:'EI', vals:[1,0]},
+      // S/N
+      {text:'你在处理信息时更关注？', opts:['具体的事实、数据与细节','整体的模式、联系与可能性'], dim:'SN', vals:[1,0]},
+      {text:'你更信任？', opts:['亲身经历和实际经验','直觉和对未来的预感'], dim:'SN', vals:[1,0]},
+      {text:'描述自己时，你更认同哪个词？', opts:['务实的、脚踏实地的','富有想象力的、有远见的'], dim:'SN', vals:[1,0]},
+      {text:'学习新技能时，你更喜欢？', opts:['一步步跟着教程来','了解整体框架，再自己摸索'], dim:'SN', vals:[1,0]},
+      {text:'你对未来的规划更偏向？', opts:['制定实际可行的短期计划','畅想长远宏大的愿景'], dim:'SN', vals:[1,0]},
+      // T/F
+      {text:'做重要决定时，你更依赖？', opts:['逻辑分析与客观标准','个人价值观与对他人感受的考虑'], dim:'TF', vals:[1,0]},
+      {text:'朋友倾诉烦恼时，你第一反应是？', opts:['帮他分析问题找解决方案','先给予情感支持和理解'], dim:'TF', vals:[1,0]},
+      {text:'被人批评时，你通常？', opts:['冷静分析批评是否合理，不太在意情绪','容易感到受伤，需要时间消化'], dim:'TF', vals:[1,0]},
+      {text:'你更欣赏哪种领导风格？', opts:['公平、能力强、决断力好的领导','关心团队、善于调和关系的领导'], dim:'TF', vals:[1,0]},
+      {text:'在辩论中，你更在意？', opts:['谁的逻辑更严密、论据更充分','辩论的氛围是否和谐，有没有伤到感情'], dim:'TF', vals:[1,0]},
+      // J/P
+      {text:'你的生活方式更接近？', opts:['有计划、有条理，不喜欢临时变动','灵活随性，享受临时起意的新鲜感'], dim:'JP', vals:[1,0]},
+      {text:'面对截止日期，你通常？', opts:['提前完成，不喜欢最后一刻的压力','在截止前紧张冲刺，压力会激发动力'], dim:'JP', vals:[1,0]},
+      {text:'你的桌面/房间通常是？', opts:['整洁有序，东西各归其位','随性摆放，自己知道在哪就好'], dim:'JP', vals:[1,0]},
+      {text:'旅行时你更喜欢？', opts:['提前规划好行程、酒店、景点','随心而定，走哪算哪'], dim:'JP', vals:[1,0]},
+      {text:'对于"未完成"的事情，你会？', opts:['坐立不安，必须完成才能放心','觉得无所谓，之后再说'], dim:'JP', vals:[1,0]},
+      // 额外题
+      {text:'当你有空闲时间，你更愿意？', opts:['参加社交活动或聚会','看书、独处或做自己喜欢的安静事情'], dim:'EI', vals:[1,0]},
+      {text:'你更擅长？', opts:['记住具体的细节和事实','记住事件的整体意义和情境'], dim:'SN', vals:[1,0]},
+      {text:'你认为什么更重要？', opts:['真理和公正，即使伤害别人感情','关心他人感受，即使不完全诚实'], dim:'TF', vals:[1,0]},
+      {text:'你更喜欢哪种生活状态？', opts:['明确的目标与规律的节奏','保持开放，随时迎接新的可能'], dim:'JP', vals:[1,0]},
+    ],
+    score: scoreMBTI,
+    renderResult: renderMBTIResult,
+  },
+
+  // ────────────── GAD-7 焦虑 ──────────────
+  anxiety: {
+    title: '焦虑自评量表 (GAD-7)',
+    type: 'likert4',
+    intro: '在过去两周内，以下问题出现的频率：',
+    labels: ['完全没有','有几天','超过一周','几乎每天'],
+    questions: [
+      {text:'感到紧张、焦虑或烦躁'},
+      {text:'无法停止或控制担忧'},
+      {text:'对各种各样的事情过于担心'},
+      {text:'难以放松'},
+      {text:'由于过于不安而无法静坐'},
+      {text:'变得容易烦恼或易怒'},
+      {text:'感到好像有什么可怕的事会发生'},
+    ],
+    score: scoreSimple,
+    renderResult: renderAnxietyResult,
+  },
+
+  // ────────────── PHQ-9 抑郁 ──────────────
+  depression: {
+    title: '抑郁筛查量表 (PHQ-9)',
+    type: 'likert4',
+    intro: '在过去两周内，以下问题出现的频率：',
+    labels: ['完全没有','有几天','超过一周','几乎每天'],
+    questions: [
+      {text:'做事时提不起劲或没有兴趣'},
+      {text:'感到心情低落、沮丧或绝望'},
+      {text:'入睡困难、睡不安稳或睡眠过多'},
+      {text:'感觉疲倦或没有活力'},
+      {text:'食欲不振或吃太多'},
+      {text:'觉得自己很糟糕，或觉得自己很失败，或让自己或家人失望'},
+      {text:'对事情专注有困难，例如看报纸或看电视时'},
+      {text:'行动或说话速度缓慢到别人已经察觉，或正好相反，烦躁或坐立不安、动来动去的情况更胜于平常'},
+      {text:'有不如死掉或用某种方式伤害自己的念头'},
+    ],
+    score: scoreSimple,
+    renderResult: renderDepressionResult,
+  },
+
+  // ────────────── Big Five ──────────────
+  big5: {
+    title: '大五人格测试 (OCEAN)',
+    type: 'likert5',
+    labels: ['非常不同意','不同意','中立','同意','非常同意'],
+    questions: [
+      // O - Openness (8题)
+      {text:'我喜欢思考抽象的概念和理论', dim:'O', rev:false},
+      {text:'我对艺术、音乐或文学有强烈的欣赏', dim:'O', rev:false},
+      {text:'我富有创造力和想象力', dim:'O', rev:false},
+      {text:'我喜欢尝试新事物', dim:'O', rev:false},
+      {text:'我很少有新奇的想法', dim:'O', rev:true},
+      {text:'我对哲学或深层问题感兴趣', dim:'O', rev:false},
+      {text:'我不喜欢诗歌或音乐', dim:'O', rev:true},
+      {text:'我善于发现事物的美感', dim:'O', rev:false},
+      // C - Conscientiousness (8题)
+      {text:'我总是将工作做到完美', dim:'C', rev:false},
+      {text:'我是一个有条理的人', dim:'C', rev:false},
+      {text:'我善于管理自己的时间', dim:'C', rev:false},
+      {text:'我总是完成自己开始的事情', dim:'C', rev:false},
+      {text:'我经常忘记把东西放回原处', dim:'C', rev:true},
+      {text:'我喜欢有计划地做事', dim:'C', rev:false},
+      {text:'我有时马虎大意，不够仔细', dim:'C', rev:true},
+      {text:'我在工作中很注重细节', dim:'C', rev:false},
+      // E - Extraversion (8题)
+      {text:'我在聚会和社交场合中感到充满活力', dim:'E', rev:false},
+      {text:'我喜欢成为众人关注的焦点', dim:'E', rev:false},
+      {text:'我觉得和别人交谈很容易', dim:'E', rev:false},
+      {text:'我在人群中感到不自在', dim:'E', rev:true},
+      {text:'我喜欢见新朋友', dim:'E', rev:false},
+      {text:'我和朋友在一起时比独处时更有精神', dim:'E', rev:false},
+      {text:'我在社交场合通常很安静', dim:'E', rev:true},
+      {text:'我是一个活泼外向的人', dim:'E', rev:false},
+      // A - Agreeableness (8题)
+      {text:'我对别人有同理心，容易感受到别人的情绪', dim:'A', rev:false},
+      {text:'我关心他人的感受', dim:'A', rev:false},
+      {text:'我认为帮助别人是重要的', dim:'A', rev:false},
+      {text:'有时我对别人很粗鲁', dim:'A', rev:true},
+      {text:'我善于合作而不是竞争', dim:'A', rev:false},
+      {text:'有时我会操纵别人来得到自己想要的', dim:'A', rev:true},
+      {text:'我尊重他人', dim:'A', rev:false},
+      {text:'我通常会考虑他人的利益', dim:'A', rev:false},
+      // N - Neuroticism (8题)
+      {text:'我情绪起伏较大', dim:'N', rev:false},
+      {text:'我经常感到情绪低落', dim:'N', rev:false},
+      {text:'我很容易感到压力或紧张', dim:'N', rev:false},
+      {text:'我通常情绪稳定', dim:'N', rev:true},
+      {text:'我经常感到焦虑或担心', dim:'N', rev:false},
+      {text:'我很少感到悲伤或忧郁', dim:'N', rev:true},
+      {text:'我的情绪容易受到小事影响', dim:'N', rev:false},
+      {text:'我面对挫折时能很快恢复', dim:'N', rev:true},
+    ],
+    score: scoreBig5,
+    renderResult: renderBig5Result,
+  },
+
+  // ────────────── PSS 压力 ──────────────
+  stress: {
+    title: '感知压力量表 (PSS-14)',
+    type: 'likert5',
+    labels: ['从不','很少','有时','经常','总是'],
+    questions: [
+      {text:'你有多少次因为意外事情而感到不知所措？', rev:false},
+      {text:'你有多少次感到无法控制生活中重要的事情？', rev:false},
+      {text:'你有多少次感到紧张和压力？', rev:false},
+      {text:'你有多少次能够成功处理令你烦恼的事？', rev:true},
+      {text:'你有多少次感到有效地应对了生活中的重要变化？', rev:true},
+      {text:'你有多少次感到有信心处理个人问题？', rev:true},
+      {text:'你有多少次感到事情按你希望的方式进行？', rev:true},
+      {text:'你有多少次发现无法完成所有必须完成的事情？', rev:false},
+      {text:'你有多少次能够控制生活中令你烦恼的事？', rev:true},
+      {text:'你有多少次感到自己掌控着局面？', rev:true},
+      {text:'你有多少次因为无法控制的事情而感到愤怒？', rev:false},
+      {text:'你有多少次发现自己在想需要完成的事情？', rev:false},
+      {text:'你有多少次能够控制如何度过自己的时间？', rev:true},
+      {text:'你有多少次感到困难积累太多以至于无法克服？', rev:false},
+    ],
+    score: scorePSS,
+    renderResult: renderStressResult,
+  },
+
+  // ────────────── Rosenberg 自尊 ──────────────
+  selfesteem: {
+    title: '自尊量表 (Rosenberg)',
+    type: 'likert4',
+    labels: ['非常不同意','不同意','同意','非常同意'],
+    questions: [
+      {text:'总体而言，我对自己感到满意', rev:false},
+      {text:'有时候，我觉得自己一点都不好', rev:true},
+      {text:'我觉得自己有很多优点', rev:false},
+      {text:'我能做好大多数人能做的事', rev:false},
+      {text:'我觉得没有什么值得我骄傲的', rev:true},
+      {text:'有时候我确实觉得自己没用', rev:true},
+      {text:'我觉得自己是一个有价值的人，至少与其他人平等', rev:false},
+      {text:'我希望我能对自己有更多尊重', rev:true},
+      {text:'从各方面来看，我倾向于认为自己是一个失败者', rev:true},
+      {text:'我对自己持有积极的态度', rev:false},
+    ],
+    score: scoreRosenberg,
+    renderResult: renderSelfEsteemResult,
+  },
+};
+
+// ── Scoring functions ──
+function scoreSimple(answers) { return answers.reduce((a,b)=>a+b,0); }
+
+function scoreMBTI(answers) {
+  const dims = {EI:{E:0,I:0}, SN:{S:0,N:0}, TF:{T:0,F:0}, JP:{J:0,P:0}};
+  const qs = TESTS.mbti.questions;
+  answers.forEach((a,i)=>{
+    const q=qs[i];
+    if(a===0){ dims[q.dim][q.dim[0]]+=1; }
+    else { dims[q.dim][q.dim[1]]+=1; }
+  });
+  return dims;
+}
+
+function scoreBig5(answers) {
+  const qs = TESTS.big5.questions;
+  const totals = {O:0,C:0,E:0,A:0,N:0};
+  const counts = {O:0,C:0,E:0,A:0,N:0};
+  answers.forEach((a,i)=>{
+    const q=qs[i], val=q.rev?(4-a):a;
+    totals[q.dim]+=val; counts[q.dim]++;
+  });
+  const pct={};
+  Object.keys(totals).forEach(k=>{ pct[k]=Math.round((totals[k]/(counts[k]*4))*100); });
+  return pct;
+}
+
+function scorePSS(answers) {
+  const qs=TESTS.stress.questions;
+  let total=0;
+  answers.forEach((a,i)=>{
+    total += qs[i].rev ? (4-a) : a;
+  });
+  return total;
+}
+
+function scoreRosenberg(answers) {
+  const qs=TESTS.selfesteem.questions;
+  let total=0;
+  answers.forEach((a,i)=>{
+    total += qs[i].rev ? (3-a) : a;
+  });
+  return total;
+}
+
+// ── MBTI type data ──
+const MBTI_TYPES = {
+  INTJ:{name:'建筑师',emoji:'🏛️',desc:'极具战略眼光的思考者，拥有独立的思维和卓越的远见规划能力。他们追求知识与效率，对自己和他人都要求极高。',traits:['战略思维','独立自主','意志坚定','追求完美','博学多才'],famous:['埃隆·马斯克','尼采','霍金']},
+  INTP:{name:'逻辑学家',emoji:'🔬',desc:'富有创造力的思想家，对所有事物都有强烈的求知欲和分析欲。喜欢用逻辑和理性来解释这个世界。',traits:['逻辑缜密','创意无限','客观分析','哲学思考','独立思考'],famous:['爱因斯坦','比尔·盖茨','达尔文']},
+  ENTJ:{name:'指挥官',emoji:'⚔️',desc:'天生的领导者，大胆果断、意志坚强。他们善于发现机会并带领团队实现雄心勃勃的目标。',traits:['领导力强','决断力好','战略眼光','高度自信','目标导向'],famous:['史蒂夫·乔布斯','拿破仑','玛格丽特·撒切尔']},
+  ENTP:{name:'辩论家',emoji:'💡',desc:'思维敏捷的创新者，喜欢挑战既定观念和思维界限。他们享受辩论并总能找到新奇的解决方案。',traits:['思维活跃','善于辩论','创新精神','机智幽默','灵活变通'],famous:['马克·吐温','萨特','沃兹尼亚克']},
+  INFJ:{name:'提倡者',emoji:'🌺',desc:'富有洞察力和同理心的理想主义者，对人性有深刻理解。他们坚定地追求自己的价值观和使命感。',traits:['深刻洞察','强烈同理心','坚守原则','有远见','默默奉献'],famous:['甘地','马丁·路德·金','奥巴马']},
+  INFP:{name:'调停者',emoji:'🦋',desc:'有理想主义、富有同情心的梦想家。他们渴望用创造力和善意使世界变得更美好。',traits:['充满理想','富有创意','真诚善良','情感丰富','追求意义'],famous:['J.K.罗琳','梵高','奥黛丽·赫本']},
+  ENFJ:{name:'主人公',emoji:'🌟',desc:'魅力十足、充满热情的领导者，善于激励和引导他人。他们以真诚的关心和感染力影响周围的人。',traits:['感染力强','热情洋溢','善于沟通','利他主义','有号召力'],famous:['奥普拉','奥巴马','尼尔森·曼德拉']},
+  ENFP:{name:'竞选者',emoji:'🎪',desc:'充满热情和创造力的自由灵魂，随时准备拥抱生活中的各种可能性。他们以乐观的态度感染身边所有人。',traits:['充满热情','创意无限','善于社交','乐观积极','富有同理心'],famous:['鲁滨逊','菲律普王子','罗宾·威廉姆斯']},
+  ISTJ:{name:'物流师',emoji:'📋',desc:'可靠负责、恪守职责的实干家。他们值得信赖、一丝不苟，在各种情况下都能保持冷静和条理。',traits:['高度负责','谨慎细致','遵守规则','忠诚可靠','踏实稳重'],famous:['乔治·华盛顿','沃伦·巴菲特','安吉拉·默克尔']},
+  ISFJ:{name:'守卫者',emoji:'🛡️',desc:'热心周到、忠实可靠的保护者，总是准备好用温暖和慷慨来保护身边所爱的人。',traits:['温暖关怀','尽职尽责','善于观察','稳重踏实','默默奉献'],famous:['碧昂丝','罗杰斯先生','凯特·米德尔顿']},
+  ESTJ:{name:'总经理',emoji:'🏢',desc:'出色的管理者，在维护和管理事务或人员方面无与伦比。他们有着强烈的道德感和责任心。',traits:['组织能力强','坚定果断','实事求是','高度负责','重视传统'],famous:['希拉里·克林顿','弗兰克·辛纳特拉','艾玛·沃森']},
+  ESFJ:{name:'执政官',emoji:'👑',desc:'无比热心、友善的人，时刻关注他人需求。他们受到良好礼仪和强烈社会意识驱动。',traits:['热心助人','善于社交','重视和谐','责任心强','慷慨大方'],famous:['泰勒·斯威夫特','比尔·克林顿','恰达威克·博斯曼']},
+  ISTP:{name:'鉴赏家',emoji:'🔧',desc:'大胆而实际的实验者，精通各种工具，热衷于探索世界的运作方式。他们冷静高效，危机中尤为冷静。',traits:['动手能力强','冷静理性','适应能力强','解决问题','独立自主'],famous:['迈克尔·乔丹','布鲁斯·李','查克·耶格尔']},
+  ISFP:{name:'探险家',emoji:'🎨',desc:'灵活而充满魅力的艺术家，随时准备探索和体验新事物。他们真实地生活着，热爱美的事物。',traits:['艺术感强','随性自由','善良温柔','注重当下','热爱美感'],famous:['迈克尔·杰克逊','玛丽莲·梦露','弗里达·卡罗']},
+  ESTP:{name:'企业家',emoji:'🚀',desc:'精明的能量推进者，生活在当下，享受戏剧性和激动人心的事物。他们行动力超强，思维灵活。',traits:['行动力强','社交能力强','灵活机智','注重实际','精力充沛'],famous:['唐纳德·特朗普','麦当娜','尼克·卡格尔']},
+  ESFP:{name:'表演者',emoji:'🎭',desc:'自发的、充满活力的表演者，为周围人带来欢乐和刺激。他们是天生的娱乐者，热爱生活。',traits:['充满活力','热爱表演','乐于助人','享受当下','富有感染力'],famous:['玛利亚·凯莉','梅尔·吉普森','阿黛尔']},
+};
+
+// ── Render results ──
+function renderMBTIResult(dims) {
+  const E=dims.EI.E, I=dims.EI.I, S=dims.SN.S, N_=dims.SN.N, T=dims.TF.T, F=dims.TF.F, J=dims.JP.J, P=dims.JP.P;
+  const type = (E>=I?'E':'I')+(S>=N_?'S':'N')+(T>=F?'T':'F')+(J>=P?'J':'P');
+  const info = MBTI_TYPES[type] || {name:'未知',emoji:'❓',desc:'',traits:[],famous:[]};
+  const totEI=E+I, totSN=S+N_, totTF=T+F, totJP=J+P;
+  return `
+  <div class="result-badge">
+    <div style="font-size:3rem;margin-bottom:6px">${info.emoji}</div>
+    <div class="result-type">${type}</div>
+    <div class="result-name">${info.name}</div>
+    <div class="result-desc">${info.desc}</div>
+  </div>
+  <div class="dim-bars">
+    <div class="dim-row">
+      <div class="dim-labels"><span class="dim-label-l">外向 E</span><span class="dim-label-r">内向 I</span></div>
+      <div class="dim-bar">
+        ${E>=I ? `<div class="dim-fill left" style="width:${Math.round(E/totEI*100)}%"></div>` : `<div class="dim-fill right" style="width:${Math.round(I/totEI*100)}%"></div>`}
+      </div>
+      <div class="dim-pct">${E>=I?'E':'I'} ${Math.round((E>=I?E:I)/totEI*100)}%</div>
+    </div>
+    <div class="dim-row">
+      <div class="dim-labels"><span class="dim-label-l">感觉 S</span><span class="dim-label-r">直觉 N</span></div>
+      <div class="dim-bar">
+        ${S>=N_ ? `<div class="dim-fill left" style="width:${Math.round(S/totSN*100)}%"></div>` : `<div class="dim-fill right" style="width:${Math.round(N_/totSN*100)}%"></div>`}
+      </div>
+      <div class="dim-pct">${S>=N_?'S':'N'} ${Math.round((S>=N_?S:N_)/totSN*100)}%</div>
+    </div>
+    <div class="dim-row">
+      <div class="dim-labels"><span class="dim-label-l">思考 T</span><span class="dim-label-r">情感 F</span></div>
+      <div class="dim-bar">
+        ${T>=F ? `<div class="dim-fill left" style="width:${Math.round(T/totTF*100)}%"></div>` : `<div class="dim-fill right" style="width:${Math.round(F/totTF*100)}%"></div>`}
+      </div>
+      <div class="dim-pct">${T>=F?'T':'F'} ${Math.round((T>=F?T:F)/totTF*100)}%</div>
+    </div>
+    <div class="dim-row">
+      <div class="dim-labels"><span class="dim-label-l">判断 J</span><span class="dim-label-r">感知 P</span></div>
+      <div class="dim-bar">
+        ${J>=P ? `<div class="dim-fill left" style="width:${Math.round(J/totJP*100)}%"></div>` : `<div class="dim-fill right" style="width:${Math.round(P/totJP*100)}%"></div>`}
+      </div>
+      <div class="dim-pct">${J>=P?'J':'P'} ${Math.round((J>=P?J:P)/totJP*100)}%</div>
+    </div>
+  </div>
+  <div class="traits-grid">${info.traits.map(t=>`<span class="trait-chip">${t}</span>`).join('')}</div>
+  <div class="famous"><h4>⭐ 同类型名人</h4><div class="famous-list">${info.famous.map(f=>`<span class="famous-chip">${f}</span>`).join('')}</div></div>
+  `;
+}
+
+function renderAnxietyResult(score) {
+  let level,color,desc,tips;
+  if(score<=4){level='极少焦虑';color='var(--success)';desc='你目前的焦虑水平极低，心理状态良好。继续保持健康的生活方式！';tips=['保持规律作息','适度运动','与朋友保持联系'];}
+  else if(score<=9){level='轻度焦虑';color='var(--info)';desc='你存在轻度焦虑情绪，这是生活中常见的正常反应，通过适当调节可以缓解。';tips=['尝试冥想或深呼吸','减少咖啡因摄入','保证充足睡眠','与信任的人倾诉'];}
+  else if(score<=14){level='中度焦虑';color='var(--warning)';desc='你的焦虑程度较高，可能已经影响到日常生活和工作效率，建议积极寻求支持。';tips=['考虑寻求心理咨询','系统性放松训练','减少不必要的压力源','规律有氧运动'];}
+  else{level='重度焦虑';color='var(--danger)';desc='你的焦虑程度较重，强烈建议尽快咨询心理健康专业人士或医生，获得专业帮助。';tips=['立即寻求专业心理咨询','告知家人和朋友你的状况','可考虑药物治疗（遵医嘱）','避免独处，保持社会联系'];}
+  return scoreGauge(score,21,level,color,desc,tips,'焦虑评分');
+}
+
+function renderDepressionResult(score) {
+  let level,color,desc,tips;
+  if(score<=4){level='无明显抑郁';color='var(--success)';desc='你目前情绪状态良好，没有明显的抑郁倾向。继续保持积极的生活态度！';tips=['保持社交活动','培养兴趣爱好','规律运动锻炼'];}
+  else if(score<=9){level='轻度抑郁';color='var(--info)';desc='你有轻度的情绪低落表现，建议关注自己的情绪状态并采取积极措施。';tips=['增加户外活动时间','与亲友多沟通交流','记录感恩日记','避免过度思考'];}
+  else if(score<=14){level='中度抑郁';color='var(--warning)';desc='你的情绪状态需要关注，建议寻求专业心理咨询师的帮助。';tips=['主动寻求心理咨询','告知信任的人你的感受','建立规律的日常作息','适度运动（每天30分钟）'];}
+  else if(score<=19){level='中重度抑郁';color:'#ff7043';desc='你可能正在经历较重的抑郁状态，请认真对待，尽快寻求专业帮助。';tips=['立即预约心理咨询','考虑向精神科医生就诊','保持与支持性亲友的联系','避免做重大决定'];}
+  else{level='重度抑郁';color:'var(--danger)';desc='你的情绪状态非常令人担忧，请立即寻求专业心理健康医疗服务。';tips=['立即寻求专业医疗帮助','拨打心理援助热线：400-161-9995','不要独处，告知家人状况','遵从医嘱接受治疗'];}
+  return scoreGauge(score,27,level,color,desc,tips,'抑郁评分');
+}
+
+function scoreGauge(score,max,level,color,desc,tips,label) {
+  const pct=Math.round(score/max*100);
+  const circumference=2*Math.PI*54;
+  const dashOffset=circumference*(1-pct/100);
+  return `
+  <div class="score-meter">
+    <svg width="140" height="140" viewBox="0 0 140 140" style="margin:0 auto 14px;display:block">
+      <circle cx="70" cy="70" r="54" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10"/>
+      <circle cx="70" cy="70" r="54" fill="none" stroke="${color}" stroke-width="10"
+        stroke-dasharray="${circumference}" stroke-dashoffset="${dashOffset}"
+        stroke-linecap="round" transform="rotate(-90 70 70)"
+        style="transition:stroke-dashoffset 1s ease"/>
+      <text x="70" y="64" text-anchor="middle" fill="white" font-size="26" font-weight="900">${score}</text>
+      <text x="70" y="82" text-anchor="middle" fill="#888aaa" font-size="13">${label}</text>
+    </svg>
+    <div class="score-level" style="color:${color}">${level}</div>
+    <div class="score-hint">${desc}</div>
+  </div>
+  <div style="margin-top:22px">
+    <div style="font-size:.88rem;color:var(--muted);margin-bottom:12px;font-weight:600">📝 建议与提示</div>
+    ${tips.map(t=>`<div style="padding:10px 14px;margin-bottom:8px;background:rgba(255,255,255,0.04);border-radius:10px;font-size:.88rem;border-left:3px solid ${color}">· ${t}</div>`).join('')}
+  </div>`;
+}
+
+function renderBig5Result(pct) {
+  const labels = {
+    O:{name:'开放性',en:'Openness',desc:'对新经验和想法的开放程度',color:'#a78bfa'},
+    C:{name:'尽责性',en:'Conscientiousness',desc:'做事有条理、负责任的程度',color:'#40c4ff'},
+    E:{name:'外向性',en:'Extraversion',desc:'社交活跃、精力充沛的程度',color:'#00e676'},
+    A:{name:'宜人性',en:'Agreeableness',desc:'对他人友善、合作的程度',color:'#ffab00'},
+    N:{name:'神经质',en:'Neuroticism',desc:'情绪不稳定、焦虑倾向的程度',color:'#ff5252'},
+  };
+  const desc = {
+    O: pct.O>=60?'你对新事物和新想法非常开放，富有创造力和好奇心。':'你倾向于实际和传统，更喜欢熟悉的事物。',
+    C: pct.C>=60?'你做事有条理、认真负责，具有很强的自律性。':'你倾向于随性而为，不太在意规则与条理。',
+    E: pct.E>=60?'你外向活泼，从社交中获得能量，享受与人交往。':'你偏向内敛安静，独处让你感到充实和放松。',
+    A: pct.A>=60?'你富有同理心，善良友好，重视与他人的和谐关系。':'你更注重自身立场，在人际关系中较为独立。',
+    N: pct.N>=60?'你情绪波动较大，容易感受到焦虑和压力。':'你情绪稳定，不容易受外界干扰，心理韧性强。',
+  };
+  return `
+  <div class="result-badge">
+    <div style="font-size:2.5rem;margin-bottom:8px">🌟 大五人格结果</div>
+    <div class="result-desc">以下是你在五个人格维度上的得分情况</div>
+  </div>
+  <div class="big5-bar-wrap">
+    ${Object.entries(labels).map(([k,v])=>`
+    <div class="b5-row">
+      <div style="width:70px;text-align:right;flex-shrink:0">
+        <div class="b5-name" style="color:${v.color}">${v.name}</div>
+        <div style="font-size:.72rem;color:var(--muted)">${v.en}</div>
+      </div>
+      <div class="b5-track">
+        <div class="b5-fill" style="width:${pct[k]}%;background:linear-gradient(90deg,${v.color}88,${v.color})"></div>
+      </div>
+      <div class="b5-pct" style="color:${v.color};font-weight:700">${pct[k]}%</div>
+    </div>
+    <div style="font-size:.8rem;color:var(--muted);margin-left:82px;margin-top:-10px;margin-bottom:14px">${desc[k]}</div>
+    `).join('')}
+  </div>`;
+}
+
+function renderStressResult(score) {
+  let level,color,desc,tips;
+  if(score<=13){level='压力较低';color='var(--success)';desc='你的压力水平处于健康范围，生活与工作的平衡状态良好。';tips=['继续保持良好的压力管理习惯','尝试挑战自我、发掘新潜能','帮助身边有压力的人'];}
+  else if(score<=26){level='中等压力';color='var(--warning)';desc='你感受到一定程度的压力，这在现代生活中很常见，适当调节有助于维持健康。';tips=['每天留出15分钟放松时间','尝试正念冥想','合理分配工作与休息时间','减少不必要的完美主义'];}
+  else{level='高度压力';color:'var(--danger)';desc='你的压力水平较高，长期高压可能影响身心健康，需要认真对待和积极干预。';tips=['识别并消除主要压力源','寻求亲友或专业人士的支持','学习有效的时间管理技巧','考虑心理咨询','定期有氧运动（科学减压）'];}
+  return scoreGauge(score,56,level,color,desc,tips,'压力评分');
+}
+
+function renderSelfEsteemResult(score) {
+  let level,color,desc,tips;
+  if(score<=15){level='自尊较低';color:'var(--danger)';desc='你的自我价值感偏低，可能经常怀疑自己或对自己评价过低，这值得关注和改善。';tips=['与心理咨询师探讨自我价值','记录每天的成就与优点','减少与他人的负面比较','尝试正向自我对话','设定小目标并庆祝完成'];}
+  else if(score<=25){level='中等自尊';color:'var(--warning)';desc='你的自我价值感处于中等水平，有一定的自信基础，但还有提升的空间。';tips=['主动肯定自己的优点','挑战并改变消极自我认知','培养新技能增强自信','保持自我成长的意识'];}
+  else{level='高自尊';color:'var(--success)';desc='你具有健康的自我价值感，对自己充满信心，能够积极面对生活中的挑战。';tips=['继续保持积极的自我认知','将自信分享给身边的人','在帮助他人中发挥你的力量','持续自我成长与挑战'];}
+  return scoreGauge(score,30,level,color,desc,tips,'自尊评分');
+}
+
+// ── Navigation ──
+function goHome() {
+  document.getElementById('home-screen').classList.remove('hidden');
+  document.getElementById('test-screen').classList.remove('active');
+  document.getElementById('result-screen').classList.remove('active');
+  currentTest=''; currentQ=0; answers=[];
+}
+
+function startTest(testId) {
+  currentTest=testId; currentQ=0; answers=[];
+  testDef=TESTS[testId];
+  document.getElementById('home-screen').classList.add('hidden');
+  document.getElementById('test-screen').classList.add('active');
+  document.getElementById('result-screen').classList.remove('active');
+  document.getElementById('test-title').textContent=testDef.title;
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q=testDef.questions[currentQ];
+  const total=testDef.questions.length;
+  document.getElementById('q-num').textContent=`问题 ${currentQ+1} / ${total}`;
+  document.getElementById('q-text').textContent=(testDef.intro&&currentQ===0?testDef.intro+'\n\n':'')+q.text;
+  document.getElementById('progress-text').textContent=`第 ${currentQ+1} 题`;
+  document.getElementById('progress-count').textContent=`${currentQ+1} / ${total}`;
+  document.getElementById('progress-fill').style.width=`${((currentQ+1)/total)*100}%`;
+
+  const container=document.getElementById('options-container');
+  container.innerHTML='';
+  document.getElementById('next-btn').disabled=true;
+
+  if(testDef.type==='choice') {
+    // A/B choice
+    q.opts.forEach((opt,i)=>{
+      const btn=document.createElement('button');
+      btn.className='option-btn';
+      btn.innerHTML=`<span class="opt-letter">${String.fromCharCode(65+i)}</span><span>${opt}</span>`;
+      btn.onclick=()=>{
+        container.querySelectorAll('.option-btn').forEach(b=>b.classList.remove('selected'));
+        btn.classList.add('selected');
+        answers[currentQ]=i;
+        document.getElementById('next-btn').disabled=false;
+      };
+      if(answers[currentQ]===i) { btn.classList.add('selected'); document.getElementById('next-btn').disabled=false; }
+      container.appendChild(btn);
+    });
+  } else if(testDef.type==='likert4'||testDef.type==='likert5') {
+    const n=testDef.type==='likert4'?4:5;
+    const labelDiv=document.createElement('div');
+    labelDiv.className='likert-labels';
+    labelDiv.innerHTML=`<span>${testDef.labels[0]}</span><span>${testDef.labels[n-1]}</span>`;
+    container.appendChild(labelDiv);
+    const wrap=document.createElement('div');
+    wrap.className='likert-wrap';
+    for(let i=0;i<n;i++){
+      const btn=document.createElement('button');
+      btn.className='likert-btn'+(answers[currentQ]===i?' selected':'');
+      btn.textContent=i;
+      btn.title=testDef.labels[i];
+      btn.onclick=()=>{
+        wrap.querySelectorAll('.likert-btn').forEach(b=>b.classList.remove('selected'));
+        btn.classList.add('selected');
+        answers[currentQ]=i;
+        document.getElementById('next-btn').disabled=false;
+      };
+      if(answers[currentQ]===i) document.getElementById('next-btn').disabled=false;
+      wrap.appendChild(btn);
+    }
+    container.appendChild(wrap);
+    // Labels below each button
+    const subLabels=document.createElement('div');
+    subLabels.style.cssText='display:flex;justify-content:space-around;margin-top:8px;flex-wrap:wrap;gap:4px;';
+    testDef.labels.forEach(l=>{
+      const s=document.createElement('span');
+      s.style.cssText='font-size:.68rem;color:var(--muted);text-align:center;flex:1;min-width:50px;';
+      s.textContent=l;
+      subLabels.appendChild(s);
+    });
+    container.appendChild(subLabels);
+  }
+
+  // Refresh animation
+  const card=document.getElementById('question-card');
+  card.style.animation='none'; card.offsetHeight; card.style.animation='';
+}
+
+function nextQuestion() {
+  if(answers[currentQ]===undefined){showToast('请先选择一个选项！');return;}
+  currentQ++;
+  if(currentQ>=testDef.questions.length){
+    showResult();
+  } else {
+    document.getElementById('next-btn').disabled=true;
+    renderQuestion();
+  }
+}
+
+function showResult() {
+  const raw=testDef.score(answers);
+  const html=testDef.renderResult(raw);
+  document.getElementById('test-screen').classList.remove('active');
+  document.getElementById('result-screen').classList.add('active');
+  document.getElementById('result-content').innerHTML=html+`
+  <div class="result-actions">
+    <button class="btn-outline" onclick="startTest('${currentTest}')">🔄 重新测试</button>
+    <button class="btn-primary" onclick="goHome()">← 返回首页</button>
+  </div>
+  <div class="disclaimer">⚠️ 本测试仅供参考，不代表专业诊断。如有疑虑，请咨询专业心理健康人员。</div>
+  `;
+  // Animate dimension bars after render
+  setTimeout(()=>{
+    document.querySelectorAll('.dim-fill,.b5-fill').forEach(el=>{
+      const w=el.style.width; el.style.width='0%';
+      setTimeout(()=>el.style.width=w,50);
+    });
+  },100);
+}
+</script>
+</body>
+</html>
